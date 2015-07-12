@@ -19,6 +19,9 @@ public class project
 			System.out.print("Enter regno: ");
 			rep=util.getString();
 			
+			if(rep.equals("*"))
+				session.main();
+			
 			if(rep.equals("exit"))
 				System.exit(0);
 			else
@@ -400,8 +403,6 @@ class setup
 		{
 			JFileChooser f = new JFileChooser();
         	
-//        	if(!file.exists())
-//        		util.main(temp);
         	System.out.println("Press Enter to select the directory to store database in...");
 			util.getString();
         	f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY); 
