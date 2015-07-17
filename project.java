@@ -9,6 +9,7 @@ public class project
 {
 	public static void main(String[] args)
 	{
+		Class.forName("com.mysql.jdbc.Driver");
 		student s=new student();
 		String rep;
 		setup.firstRun('r');
@@ -32,10 +33,10 @@ public class project
 
 class util
 {
-	static String getDirectory()
+	static String getServerData(String choice)
 	{
-		String directory="";
-		File file=new File("delete to reset");
+		String ip="",user="",password="";
+		File file=new File("server.cfg");
 		
 		do
 		{
@@ -44,14 +45,61 @@ class util
 				if(!sc.nextLine().startsWith(util.getOS()))
 					setup.firstRun('w');
 				else
-					directory=sc.nextLine();
+				{
+					ip=sc.nextLine();
+					user=sc.nextLine();
+					password=sc.nextLine();
+				}
 			}catch(IOException e)
 			{
 				e.printStackTrace();
 			}
-		}while(directory.equals(""));
+		}while(ip.equals(""));
 		
 		return directory;
+	}
+	
+	static ResultSet SQLQuery(String name,String query)
+	{
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				try(ResultSet rs=stmt.executeQuery(query))
+				{
+					CachedRowSetImpl crs=new CachedRowSetImpl();
+					crs.populate(rs);
+				}catch(SQLException e)
+				{
+					e.printStackTrace();
+				}
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+		
+		return crs;
+	}
+	
+	static void SQLUpdate(String name,String update)
+	{
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getUser(),util.getPassword()))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				stmt.executeUpdate(update);
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
 	}
 	
 	static String printDays(int n)
@@ -232,7 +280,7 @@ class setup
 	public static void main(String[] args)
 	{
 		String rep,name;
-		File namelist=new File(util.getDirectory()+util.getSeparator()+"namelist"),timetable=new File(util.getDirectory()+util.getSeparator()+"timetable");
+		File namelist=new File(util.getServerData("IP")+util.getSeparator()+"namelist"),timetable=new File(util.getServerData("IP")+util.getSeparator()+"timetable");
 		
 		namelist.mkdir();
 		timetable.mkdir();
@@ -379,7 +427,7 @@ class setup
 					f.delete();
 					f=new File(timetable.getPath()+util.getSeparator()+name+".csv");
 					f.delete();
-					f=new File(util.getDirectory()+"reports");
+					f=new File(util.getServerData("IP")+"reports");
 					list=f.listFiles();
 					for(int i=0;i<list.length;i++)
 					{
@@ -422,7 +470,7 @@ class setup
 	static void makeList()
 	{
 		String a="";
-		File dir=new File(util.getDirectory()+"timetable");
+		File dir=new File(util.getServerData("IP")+"timetable");
 		File[] f=dir.listFiles();
 		
 		if(f==null||f.length==0)
@@ -461,15 +509,15 @@ class setup
 						}
 					}
 					x=temp.length-1;
-					dir=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate());
+					dir=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate());
 					dir.mkdirs();
-					dir=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+f[i].getName());
+					dir=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+f[i].getName());
 					if(!dir.exists())
 					{
 						try(FileWriter fw=new FileWriter(dir))
 						{
 							fw.write(a);
-							dir=new File(util.getDirectory()+"namelist"+util.getSeparator()+f[i].getName());
+							dir=new File(util.getServerData("IP")+"namelist"+util.getSeparator()+f[i].getName());
 							try(Scanner sc1=new Scanner(dir))
 							{
 								sc1.nextLine();
@@ -642,7 +690,7 @@ class student
 	
 	void refresh()
 	{
-		File dir=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate());
+		File dir=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate());
 		File[] f=dir.listFiles();
 		student s=this;
 		
@@ -679,7 +727,7 @@ class student
 		student s=this.find(regno);
 		String a=util.getTime(),b;
 		session p=s.session;
-		File f=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+s.batch+".csv"),f1=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+s.batch+"(1).csv");
+		File f=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+s.batch+".csv"),f1=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+s.batch+"(1).csv");
 		
 		while(p!=null)
 		{
@@ -701,7 +749,7 @@ class student
 	void upload()
 	{
 		String a,b;
-		File dir=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+this.batch+".csv"),dir1=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+this.batch+"(1).csv");
+		File dir=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+this.batch+".csv"),dir1=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+this.batch+"(1).csv");
 		try
 		{
 			dir1.createNewFile();
@@ -753,7 +801,7 @@ class student
 	{
 		String a="",b="",c="",x="";
 		session p=new session();
-		File dir=new File(util.getDirectory()+"namelist");
+		File dir=new File(util.getServerData("IP")+"namelist");
 		File[] f=dir.listFiles();
 		
 		for(int i=0;i<f.length;i++)
@@ -779,7 +827,7 @@ class student
 							sc.close();
 							break;
 						}
-						dir=new File(util.getDirectory()+"timetable"+util.getSeparator()+f[i].getName());
+						dir=new File(util.getServerData("IP")+"timetable"+util.getSeparator()+f[i].getName());
 						
 						try(Scanner sc1=new Scanner(dir))
 						{
@@ -823,7 +871,7 @@ class student
 							e.printStackTrace();
 						}
 						
-						dir=new File(util.getDirectory()+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+f[i].getName());
+						dir=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+f[i].getName());
 						
 						if(dir.exists())									//Getting previously stored data for the day, if exists
 						{
@@ -855,15 +903,6 @@ class student
 					e.printStackTrace();
 				}
 			}
-		}
-		dir=new File(util.getDirectory()+"timetable"+util.getSeparator()+"bin");
-				
-		try(FileWriter fw=new FileWriter(dir))
-		{
-			fw.write(x);
-		}catch(IOException e)
-		{
-			e.printStackTrace();
 		}
 	}
 	
