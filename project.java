@@ -1,5 +1,7 @@
 import java.util.Calendar;
 import java.util.Scanner;
+import java.util.List;
+import java.util.ArrayList;
 import java.io.*;
 import java.awt.Desktop;
 import javax.swing.JFileChooser;
@@ -9,25 +11,34 @@ public class project
 {
 	public static void main(String[] args)
 	{
-		Class.forName("com.mysql.jdbc.Driver");
-		student s=new student();
-		String rep;
-		setup.firstRun('r');
-		setup.makeList();
-		s.init();
-		do
+		try
 		{
-			System.out.print("Enter regno: ");
-			rep=util.getString();
-			
-			if(rep.equals("*"))
-				session.main();
-			
-			if(rep.equals("exit"))
-				System.exit(0);
-			else
-				s.update(rep);
-		}while(true);
+			Class.forName("com.mysql.jdbc.Driver");
+        }catch(ClassNotFoundException e)
+        {
+        	e.printStackTrace();
+        }
+        String a[]=util.SQLQuery("test","regno","namelist");
+        for(int i=0;i<a.length;i++)
+        	System.out.println(a[i]);
+//		student s=new student();
+//		String rep;
+//		setup.firstRun('r');
+//		setup.makeList();
+//		s.init();
+//		do
+//		{
+//			System.out.print("Enter regno: ");
+//			rep=util.getString();
+//			
+//			if(rep.equals("*"))
+//				/*session.main()*/;
+//			
+//			if(rep.equals("exit"))
+//				System.exit(0);
+//			else
+//				s.update(rep);
+//		}while(true);
 	}
 }
 
@@ -42,13 +53,13 @@ class util
 		{
 			try(Scanner sc=new Scanner(file))
 			{
-				if(!sc.nextLine().startsWith(util.getOS()))
+				if(!sc.nextLine().split("%")[1].startsWith(util.getOS()))
 					setup.firstRun('w');
 				else
 				{
-					ip=sc.nextLine();
-					user=sc.nextLine();
-					password=sc.nextLine();
+					ip=sc.nextLine().split("=")[1];
+					user=sc.nextLine().split("=")[1];
+					password=sc.nextLine().split("=")[1];
 				}
 			}catch(IOException e)
 			{
@@ -56,19 +67,29 @@ class util
 			}
 		}while(ip.equals(""));
 		
-		return directory;
+		if(choice.equals("IP"))
+			return ip;
+		if(choice.equals("User"))
+			return user;
+		if(choice.equals("Password"))
+			return password;
+		return null;
 	}
 	
-	static ResultSet SQLQuery(String name,String query)
+	static String[] SQLQuery(String name,String column,String table)
 	{
+		List<String> list=new ArrayList<String>();
+		
 		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
         {
 			try(Statement stmt=conn.createStatement())
 			{
-				try(ResultSet rs=stmt.executeQuery(query))
+				try(ResultSet rs=stmt.executeQuery("SELECT "+column+" FROM "+table))
 				{
-					CachedRowSetImpl crs=new CachedRowSetImpl();
-					crs.populate(rs);
+					while (rs.next())
+					{
+    					list.add(rs.getString(column));
+					}
 				}catch(SQLException e)
 				{
 					e.printStackTrace();
@@ -82,12 +103,14 @@ class util
     		e.printStackTrace();
 		}
 		
-		return crs;
+		String[] a=list.toArray(new String[list.size()]);
+		
+		return a;
 	}
 	
-	static void SQLUpdate(String name,String update)
+	static void SQLUpdate(String update)
 	{
-		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getUser(),util.getPassword()))
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP"),util.getServerData("User"),util.getServerData("Password")))
         {
 			try(Statement stmt=conn.createStatement())
 			{
@@ -102,26 +125,92 @@ class util
 		}
 	}
 	
-	static String printDays(int n)
+	static void SQLUpdate(String name,String update)
 	{
-		String a="\n";
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				stmt.executeUpdate(update);
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+	}
+	
+	static boolean dbExists(String name)
+	{
+		String dbname;
+		
+    	try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(ResultSet rs=conn.getMetaData().getCatalogs())
+			{
+				dbname=resultSet.getString(1);
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+		
+		if(dbname.equals(name))
+			return true;
+		else
+			return false;
+	}
+	
+	static String getTodays(int n)
+	{
+		String a="";
 		
 		for(int i=1;i<=n;i++)
 		{
 			if(i==1)
-				a+="Monday,\n";
+				a+="Monday";
 			if(i==2)
-				a+="Tuesday,\n";
+				a+=", Tuesday";
 			if(i==3)
-				a+="Wednesday,\n";
+				a+=", Wednesday";
 			if(i==4)
-				a+="Thursday,\n";
+				a+=", Thursday";
 			if(i==5)
-				a+="Friday,\n";
+				a+=", Friday";
 			if(i==6)
-				a+="Saturday,\n";
+				a+=", Saturday";
 			if(i==7)
-				a+="Sunday,";
+				a+=", Sunday";
+		}
+		
+		return a;
+	}
+	
+	static String printDays(int n)
+	{
+		String a="";
+		
+		for(int i=1;i<=n;i++)
+		{
+			if(i==1)
+				a+="Monday text";
+			if(i==2)
+				a+=",Tuesday text";
+			if(i==3)
+				a+=",Wednesday text";
+			if(i==4)
+				a+=",Thursday text";
+			if(i==5)
+				a+=",Friday text";
+			if(i==6)
+				a+=",Saturday text";
+			if(i==7)
+				a+=",Sunday text";
 		}
 		
 		return a;
@@ -145,7 +234,7 @@ class util
 			if(a[1].length()==2)
 				m=a[1];
 		}while(h==null||m==null);
-		return (h+":"+m);
+		return ("'"+h+":"+m+"'");
 	}
 	
 	static String getString()
@@ -223,7 +312,7 @@ class util
 		return (yy+"-"+mm+"-"+dd);
 	}
 	
-	static int getDay()
+	static int getToday()
 	{
 		int d;
 		Calendar time=Calendar.getInstance();
@@ -279,11 +368,8 @@ class setup
 {
 	public static void main(String[] args)
 	{
-		String rep,name;
-		File namelist=new File(util.getServerData("IP")+util.getSeparator()+"namelist"),timetable=new File(util.getServerData("IP")+util.getSeparator()+"timetable");
+		String rep,classname;
 		
-		namelist.mkdir();
-		timetable.mkdir();
 		do
 		{
 			System.out.println("1->create a new class\n2->edit timetable for an existing class\n3->edit the namelist for an existing class\n4->remove a class and all it's associated data fully");
@@ -293,63 +379,52 @@ class setup
 			{
 				int i;
 				System.out.print("Input the class name: ");
-				name=util.getString();
-				File f=new File(namelist.getPath()+util.getSeparator()+name+".csv");
-				if(f.exists())
+				classname=util.getString();
+				if(util.dbExists(name))
 					System.out.println("The given class name already exists... Try again");
 				else
 				{
-					String temp;
+					String regid,sname,contact;
+					int days;
 					
-					try(FileWriter fw=new FileWriter(f))
+					i=0;
+					util.SQLUpdate("CREATE DATABASE "+classname);
+					util.SQLUpdate(classname,"CREATE TABLE Namelist(RegID text primary key,Name text,Contact text,SessionsAttended int,TotalSessions int)");
+					do
 					{
-						i=0;						
-						rep="name,regno,contact\n";
-						do
-						{
-							i++;
-							System.out.println("\nEnter Student "+ i +"'s details->\n");
-							System.out.print("Enter Student's name: ");
-							rep+=util.getString()+",";
-							System.out.print("Enter Student's register number: ");
-							rep+=util.getString()+",";
-							System.out.print("Enter Student's email ID: ");
-							rep+=util.getString()+"\n";
-							System.out.print("Want to add more Students?[y/n]: ");
-							temp=util.getString();
-						}while(temp.equals("y")||temp.equals("Y"));
-						fw.write(rep);
-					}catch(IOException e)
-					{
-						e.printStackTrace();
-					}
+						i++;
+						System.out.println("\nEnter Student "+ i +"'s details->\n");
+						System.out.print("Enter Student's name: ");
+						sname=util.getString();
+						System.out.print("Enter Student's register ID: ");
+						regid=util.getString();
+						System.out.print("Enter Student's email ID: ");
+						contact=util.getString();
+						util.SQLUpdate(classname,"INSERT INTO Namelist values('"+regid+"','"+sname+"','"+contact+"',null,null)");
+						System.out.print("Want to add more Students?[y/n]: ");
+						rep=util.getString();
+					}while(rep.equals("y")||rep.equals("Y"));
 					
-					rep="";
 					
-					f=new File(timetable.getPath()+util.getSeparator()+name+".csv");
 					System.out.println("\n\nNow, create a timetable for this class\n\n");
-					try(FileWriter fw=new FileWriter(f))
+					System.out.print("How many days a week (starting from Monday) does the class have sessions on?: ");
+					days=util.getInt();
+					util.SQLUpdate(classname,"CREATE TABLE Timetable(TimeStart text,TimeEnd text,"+util.printDays(days));
+					
+					i=0;
+					do
 					{
-						i=0;
-						do
-						{
-							i++;
-							System.out.println("\nInput the session "+ i +"'s timing (IN 24-HRS FORMAT):\n");
-							rep+=","+util.inputTime("start")+"-"+util.inputTime("end");
-							System.out.print("Add more sessions?[y/n]: ");
-							temp=util.getString();
-						}while(temp.equals("y")||temp.equals("Y"));
-						System.out.print("How many days a week (starting from Monday) does the class have sessions on?: ");
-						i=util.getInt();
-						rep+=util.printDays(i);
-						fw.write(rep);
-					}catch(IOException e)
-					{
-						e.printStackTrace();
-					}
-					System.out.println("Press Enter to continue to input what sessions happen on each day...");
-					util.getString();
-					util.openFile(f);
+						i++;
+						System.out.println("\nInput the session "+i+"'s timing (IN 24-HRS FORMAT):\n");
+						rep=util.inputTime("start")+","+util.inputTime("end");
+						System.out.println("Input the sessions that happen in the time period ("+rep+") for the days "+util.getDays(days)+" respectively");
+						for(i=0;i<days;i++)
+							rep+=",'"+util.getString()+"'";
+						util.SQLUpdate(classname,"INSERT INTO Timetable values("+rep+")");
+						
+						System.out.print("Add more sessions?[y/n]: ");
+						rep=util.getString();
+					}while(rep.equals("y")||rep.equals("Y"));
 				}
 			}
 			
@@ -498,7 +573,7 @@ class setup
 					String[] temp=null;
 					int x;
 					
-					for(int j=0;j<util.getDay();j++)
+					for(int j=0;j<util.getToday();j++)
 					{
 						if(sc.hasNextLine())
 						{
@@ -851,7 +926,7 @@ class student
 							
 							session q=p;										//Get session names
 							
-							for(int j=1;j<util.getDay();j++)
+							for(int j=1;j<util.getToday();j++)
 							{
 								sc1.nextLine();
 							}
