@@ -1,4 +1,6 @@
 import java.util.Calendar;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
@@ -18,12 +20,9 @@ public class project
         {
         	e.printStackTrace();
         }
-        String a[]=util.SQLQuery("test","regno","namelist");
-        for(int i=0;i<a.length;i++)
-        	System.out.println(a[i]);
 //		student s=new student();
 //		String rep;
-//		setup.firstRun('r');
+//		setup.firstRun();
 //		setup.makeList();
 //		s.init();
 //		do
@@ -46,20 +45,28 @@ class util
 {
 	static String getServerData(String choice)
 	{
-		String ip="",user="",password="";
+		String ip="",user="",password="",starttime="",endtime="",temp="";
 		File file=new File("server.cfg");
 		
 		do
 		{
 			try(Scanner sc=new Scanner(file))
 			{
-				if(!sc.nextLine().split("%")[1].startsWith(util.getOS()))
-					setup.firstRun('w');
-				else
+				while(sc.hasNextLine())
 				{
-					ip=sc.nextLine().split("=")[1];
-					user=sc.nextLine().split("=")[1];
-					password=sc.nextLine().split("=")[1];
+					temp=sc.nextLine();
+					if(temp.startsWith("#"))
+						;
+					if(temp.split("=")[0].equals("Server IP"))
+						ip=temp.split("=")[1];
+					if(temp.split("=")[0].equals("Username"))
+						user=temp.split("=")[1];
+					if(temp.split("=")[0].equals("Password"))
+						password=temp.split("=")[1];
+					if(temp.split("=")[0].equals("Start of Day"))
+						starttime=temp.split("=")[1];
+					if(temp.split("=")[0].equals("End of Day"))
+						endtime=temp.split("=")[1];
 				}
 			}catch(IOException e)
 			{
@@ -73,10 +80,220 @@ class util
 			return user;
 		if(choice.equals("Password"))
 			return password;
+		if(choice.equals("StartTime"))
+			return starttime;
+		if(choice.equals("EndTime"))
+			return endtime;
 		return null;
 	}
 	
-	static String[] SQLQuery(String name,String column,String table)
+	static void updateStartOfDay(String time)
+	{
+		File file=new File("server.cfg");
+		String temp=null;
+		
+		try(Scanner sc=new Scanner(file))
+		{
+			String t;
+			while(sc.hasNextLine())
+			{
+				t=sc.nextLine();
+				if(t.split("=")[0].equals("Start of Day"))
+				{
+					temp=t.split("=")[1];
+					break;
+				}
+			}
+		}catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		
+		if(time.compareTo(temp)<0)
+		{
+			try(FileWriter fw=new FileWriter(file,true))
+			{
+				try(Scanner sc=new Scanner(file))
+				{
+					String a="";
+					while(sc.hasNextLine())
+					{
+						temp=sc.nextLine();
+						if(!temp.split("=")[0].equals("Start of Day"))
+							a+=temp+"\n";
+					}
+					a+="Start of Day="+time;
+					fw.write(a);
+				}catch(IOException e)
+				{
+					e.printStackTrace();
+				}
+			}catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	static void updateEndOfDay(String time)
+	{
+		File file=new File("server.cfg");
+		String temp=null;
+		
+		try(Scanner sc=new Scanner(file))
+		{
+			String t;
+			while(sc.hasNextLine())
+			{
+				t=sc.nextLine();
+				if(t.split("=")[0].equals("End of Day"))
+				{
+					temp=t.split("=")[1];
+					break;
+				}
+			}
+		}catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		
+		if(time.compareTo(temp)>0)
+		{
+			try(FileWriter fw=new FileWriter(file,true))
+			{
+				try(Scanner sc=new Scanner(file))
+				{
+					String a="";
+					while(sc.hasNextLine())
+					{
+						temp=sc.nextLine();
+						if(!temp.split("=")[0].equals("End of Day"))
+							a+=temp+"\n";
+					}
+					a+="End of Day="+time;
+					fw.write(a);
+				}catch(IOException e)
+				{
+					e.printStackTrace();
+				}
+			}catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	static boolean testServerConnection(String ip,String user,String password) throws SQLException
+	{
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+ip,user,password))
+		{
+			return conn!=null;
+		}
+	}
+	
+	static String[] listClasses()
+	{
+		List<String> list=new ArrayList<String>();
+		
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP"),util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				try(ResultSet rs=stmt.executeQuery("SHOW Databases"))
+				{
+					String a;
+					while (rs.next())
+					{
+						a=rs.getString("Database");
+						if((!a.equals("information_schema"))&&(!a.equals("mysql"))&&(!a.equals("performance_schema")))
+    						list.add(rs.getString("Database"));
+					}
+				}catch(SQLException e)
+				{
+					e.printStackTrace();
+				}
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+		
+		String[] a=list.toArray(new String[list.size()]);
+		
+		return a;
+	}
+	
+	static String[] listDays(String name)
+	{
+		List<String> list=new ArrayList<String>();
+		
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				try(ResultSet rs=stmt.executeQuery("SHOW Tables"))
+				{
+					String a;
+					while (rs.next())
+					{
+						a=rs.getString("Database");
+						if((!a.equals("Namelist"))&&(!a.equals("Timetable")))
+    						list.add(rs.getString("Tables_in_"+name));
+					}
+				}catch(SQLException e)
+				{
+					e.printStackTrace();
+				}
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+		
+		String[] a=list.toArray(new String[list.size()]);
+		
+		return a;
+	}
+	
+	static String[] listColumns(String name,String table)
+	{
+		List<String> list=new ArrayList<String>();
+		
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				try(ResultSet rs=stmt.executeQuery("desc "+table))
+				{
+					while (rs.next())
+					{
+    					list.add(rs.getString("Field"));
+					}
+				}catch(SQLException e)
+				{
+					e.printStackTrace();
+				}
+			}catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+		
+		String[] a=list.toArray(new String[list.size()]);
+		
+		return a;
+	}
+	
+	static String[] SQLQuery(String name,String table,String column)
 	{
 		List<String> list=new ArrayList<String>();
 		
@@ -142,7 +359,24 @@ class util
 		}
 	}
 	
-	static boolean dbExists(String name)
+	static void SQLUpdateSilent(String name,String update)
+	{
+		try(Connection conn=DriverManager.getConnection("jdbc:mysql://"+util.getServerData("IP")+"/"+name,util.getServerData("User"),util.getServerData("Password")))
+        {
+			try(Statement stmt=conn.createStatement())
+			{
+				stmt.executeUpdate(update);
+			}catch(SQLException e)
+			{
+				;
+			}
+		}catch(SQLException e)
+		{
+    		e.printStackTrace();
+		}
+	}
+	
+	static boolean classExists(String name)
 	{
 		String dbname;
 		
@@ -166,7 +400,7 @@ class util
 			return false;
 	}
 	
-	static String getTodays(int n)
+	static String getDays(int n)
 	{
 		String a="";
 		
@@ -255,36 +489,36 @@ class util
 		return a;
 	}
 	
-	static String getSeparator()
-	{
-		String a=System.getProperty("os.name").toLowerCase();
-		
-		if(a.startsWith("windows"))
-			return "\\";
-			
-		else
-			return "/";
-	}
-	
-	static String getOS()
-	{
-		String a=System.getProperty("os.name").toLowerCase();
-		
-		return a;
-	}
-	
-	static void openFile(File f)
-	{
-		Desktop dt = Desktop.getDesktop();
-		
-		try
-		{
-			dt.open(f);
-		}catch(IOException e)
-		{
-			e.printStackTrace();
-		}
-	}
+//	static String getSeparator()
+//	{
+//		String a=System.getProperty("os.name").toLowerCase();
+//		
+//		if(a.startsWith("windows"))
+//			return "\\";
+//			
+//		else
+//			return "/";
+//	}
+//	
+//	static String getOS()
+//	{
+//		String a=System.getProperty("os.name").toLowerCase();
+//		
+//		return a;
+//	}
+//	
+//	static void openFile(File f)
+//	{
+//		Desktop dt = Desktop.getDesktop();
+//		
+//		try
+//		{
+//			dt.open(f);
+//		}catch(IOException e)
+//		{
+//			e.printStackTrace();
+//		}
+//	}
 	
 	static String getDate()
 	{
@@ -309,7 +543,7 @@ class util
 		else
 			yy=Integer.toString(y);
 		
-		return (yy+"-"+mm+"-"+dd);
+		return (yy+"_"+mm+"_"+dd);
 	}
 	
 	static int getToday()
@@ -325,7 +559,7 @@ class util
 			return d-1;
 	}
 	
-	static String getTime()
+	static String sysTime()
 	{
 		int h,m;
 		String hh,mm,a;
@@ -380,16 +614,19 @@ class setup
 				int i;
 				System.out.print("Input the class name: ");
 				classname=util.getString();
-				if(util.dbExists(name))
+				if(util.classExists(name))
 					System.out.println("The given class name already exists... Try again");
 				else
 				{
-					String regid,sname,contact;
+					String regid,sname,contact,temp;
+					boolean b;
 					int days;
 					
-					i=0;
+					System.out.println("Enter the max number of characters in the ID Number: ");
+					i=util.getInt();
 					util.SQLUpdate("CREATE DATABASE "+classname);
-					util.SQLUpdate(classname,"CREATE TABLE Namelist(RegID text primary key,Name text,Contact text,SessionsAttended int,TotalSessions int)");
+					util.SQLUpdate(classname,"CREATE TABLE Namelist(IDNo varchar("+i+") primary key,Name text,Contact text,Attended int,Total int)");
+					i=0;
 					do
 					{
 						i++;
@@ -400,7 +637,7 @@ class setup
 						regid=util.getString();
 						System.out.print("Enter Student's email ID: ");
 						contact=util.getString();
-						util.SQLUpdate(classname,"INSERT INTO Namelist values('"+regid+"','"+sname+"','"+contact+"',null,null)");
+						util.SQLUpdate(classname,"INSERT INTO Namelist(IDNo,Name,Contact) values('"+regid+"','"+sname+"','"+contact+"')");
 						System.out.print("Want to add more Students?[y/n]: ");
 						rep=util.getString();
 					}while(rep.equals("y")||rep.equals("Y"));
@@ -409,17 +646,37 @@ class setup
 					System.out.println("\n\nNow, create a timetable for this class\n\n");
 					System.out.print("How many days a week (starting from Monday) does the class have sessions on?: ");
 					days=util.getInt();
-					util.SQLUpdate(classname,"CREATE TABLE Timetable(TimeStart text,TimeEnd text,"+util.printDays(days));
+					util.SQLUpdate(classname,"CREATE TABLE Timetable(TimeStart text,TimeEnd text,"+util.printDays(days)+")");
 					
 					i=0;
 					do
 					{
 						i++;
 						System.out.println("\nInput the session "+i+"'s timing (IN 24-HRS FORMAT):\n");
-						rep=util.inputTime("start")+","+util.inputTime("end");
-						System.out.println("Input the sessions that happen in the time period ("+rep+") for the days "+util.getDays(days)+" respectively");
+						temp=util.inputTime("start");
+						rep=temp;
+						util.updateStartOfDay(temp);
+						temp=util.inputTime("end");
+						rep+=","+temp;
+						util.updateEndOfDay(temp);
+						System.out.println("Input the names of the sessions that happen in the time period ("+rep+") for the days "+util.getDays(days)+" respectively [NO SPECIAL CHARACTERS EXCEPT '$' AND '_']");
 						for(i=0;i<days;i++)
-							rep+=",'"+util.getString()+"'";
+						{
+							do
+							{
+								temp=util.getString();
+								Pattern p=Pattern.compile("[^a-z0-9 $_]",Pattern.CASE_INSENSITIVE);
+								Matcher m=p.matcher(temp);
+								b=m.find();
+								if(b)
+									System.out.println("UNSUPPORTED SPECIAL CHARACTER ADDED!!\nTry again...");
+								else
+								{
+									util.SQLUpdateSilent(classname,"ALTER TABLE Namelist add("+temp+"Attended int,"+temp+"Total int)");
+									rep+=",'"+temp+"'";
+								}
+							}while(b);
+						}
 						util.SQLUpdate(classname,"INSERT INTO Timetable values("+rep+")");
 						
 						System.out.print("Add more sessions?[y/n]: ");
@@ -430,21 +687,63 @@ class setup
 			
 			else if(rep.equals("2"))
 			{
-				File[] list=timetable.listFiles();
-				File f=null;
-				
+				String[] list=util.listClasses();
+				String temp,t;
+								
 				System.out.println("Existing classes:");
 				for(int i=0;i<list.length;i++)
-					if(list[i].getName().endsWith(".csv"))
-						System.out.println(list[i].getName().replaceAll(".csv",""));
+					System.out.println(list[i]);
 				System.out.print("Enter the class name to edit timetable for: ");
-				name=util.getString();
-				f=new File(timetable.getPath()+util.getSeparator()+name+".csv");
-				if(f.exists())
+				classname=util.getString();
+				if(util.classExists(classname))
 				{
-					System.out.println("Press Enter to continue to edit the timetable of class "+name+" ...");
-					util.getString();
-					util.openFile(f);
+					if((util.sysTime()<util.getServerData("StartTime"))||(util.sysTime()>util.getServerData("EndTime")))
+					{
+						System.out.print("Do you want to edit the timetable of class "+classname+"?[y/n]: ");
+						rep=util.getString();
+						if(rep.equals("y")||rep.equals("Y"))
+						{
+							do
+							{
+								list=util.listColumns(classname,"Timetable");
+								System.out.println("Enter which field to edit:");
+								System.out.print(list[0]);
+								for(int i=1;i<list.length;i++)
+									System.out.print(" | "+list[i]);
+								rep=util.getString();
+								for(int i=1;i<list.length;i++)
+									if(rep.equals(list[i]))
+									{
+										int j;
+										list=util.SQLQuery(classname,"Timetable",rep);
+										String[] list1=util.SQLQuery(classname,"Timetable","TimeStart");
+										System.out.println("SNo   "+rep+"\n");
+										for(j=0;j<list.length;j++)
+											System.out.println((j+1)+"->"+list[j]);
+										System.out.print("Enter the Sno of the row you want to edit: ");
+										j=util.getInt()-1;
+										if((j>=0)&&(j<list.length))
+										{
+											System.out.print("Enter the value to replace the "+(j+1)+"th value in "+rep+": ");
+											temp=util.getString();
+											util.SQLUpdate(classname,"UPDATE "+classname+" SET "+rep+"= '"+temp+"' WHERE TimeStart='"+list1[j]+"'");
+											System.out.println("Successfully updated "+rep+" of "+(j+1)+"th session to "+temp);
+										}
+										
+										else
+											System.out.println("The chosen row number does not exist. Try again...");
+									}
+								System.out.print("Want to continue editing fields on "+classname+"'s Timetable?[y/n]: ");
+								rep=util.getString();
+							}while(rep.equals("y")||rep.equals("Y"));
+						}
+					
+						else
+							System.out.println("Timetable not edited");
+					}
+					
+					else
+						System.out.println("DO NOT UPDATE THE TIMETABLE DURING WORKING HOURS!!");
 				}
 				
 				else
@@ -453,21 +752,63 @@ class setup
 			
 			else if(rep.equals("3"))
 			{
-				File[] list=namelist.listFiles();
-				File f=null;
-				
+				String[] list=util.listClasses();
+				String temp,t;
+								
 				System.out.println("Existing classes:");
 				for(int i=0;i<list.length;i++)
-					if(list[i].getName().endsWith(".csv"))
-						System.out.println(list[i].getName().replaceAll(".csv",""));
+					System.out.println(list[i]);
 				System.out.print("Enter the class name to edit namelist for: ");
-				name=util.getString();
-				f=new File(namelist.getPath()+util.getSeparator()+name+".csv");
-				if(f.exists())
+				classname=util.getString();
+				if(util.classExists(classname))
 				{
-					System.out.println("Press Enter to continue to edit the namelist of class "+name+" ...");
-					util.getString();
-					util.openFile(f);
+					if((util.sysTime()<util.getServerData("StartTime"))||(util.sysTime()>util.getServerData("EndTime")))
+					{
+						System.out.print("Do you want to edit the namelist of class "+classname+"?[y/n]: ");
+						rep=util.getString();
+						if(rep.equals("y")||rep.equals("Y"))
+						{
+							do
+							{
+								list=util.listColumns(classname,"Namelist");
+								System.out.println("Enter which field to edit:");
+								System.out.print(list[0]);
+								for(int i=1;i<list.length;i++)
+									System.out.print(" | "+list[i]);
+								rep=util.getString();
+								for(int i=1;i<list.length;i++)
+									if(rep.equals(list[i]))
+									{
+										int j;
+										list=util.SQLQuery(classname,"Namelist",rep);
+										String[] list1=util.SQLQuery(classname,"Namelist","IDNo");
+										System.out.println("SNo   "+rep+"\n");
+										for(j=0;j<list.length;j++)
+											System.out.println((j+1)+"->"+list[j]);
+										System.out.print("Enter the Sno of the row you want to edit: ");
+										j=util.getInt()-1;
+										if((j>=0)&&(j<list.length))
+										{
+											System.out.print("Enter the value to replace the "+(j+1)+"th value in "+rep+": ");
+											temp=util.getString();
+											util.SQLUpdate(classname,"UPDATE "+classname+" SET "+rep+"= '"+temp+"' WHERE IDNo='"+list1[j]+"'");
+											System.out.println("Successfully updated "+rep+" of "+(j+1)+"th student to "+temp);
+										}
+										
+										else
+											System.out.println("The chosen row number does not exist. Try again...");
+									}
+								System.out.print("Want to edit more fields on "+classname+"'s Namelist?[y/n]: ");
+								rep=util.getString();
+							}while(rep.equals("y")||rep.equals("Y"));
+						}
+					
+						else
+							System.out.println("Namelist not edited");
+					}
+					
+					else
+						System.out.println("DO NOT UPDATE THE NAMELIST DURING WORKING HOURS!!");
 				}
 				
 				else
@@ -476,18 +817,14 @@ class setup
 			
 			else if(rep.equals("4"))
 			{
-				rep="n";
-				File[] list=namelist.listFiles();
-				File f=null;
+				String[] list=util.listClasses();
 				
 				System.out.println("Existing classes:");
 				for(int i=0;i<list.length;i++)
-					if(list[i].getName().endsWith(".csv"))
-						System.out.println(list[i].getName().replaceAll(".csv",""));
-				System.out.print("Enter the name of the class to remove all its data(namelist, timetable, reports): ");
-				name=util.getString();
-				f=new File(namelist.getPath()+util.getSeparator()+name+".csv");
-				if(f.exists())
+					System.out.println(list[i]);
+				System.out.print("Enter the name of the class to be removed: ");
+				classname=util.getString();
+				if(util.classExists(classname))
 				{
 					System.out.print("\n \t\tCAUTION!!\nTHIS ACTION WILL REMOVE ALL DATA ASSOCIATED TO CLASS \""+name+"\" PERMANENTLY [NAMELIST,TIMETABLE,REPORTS]!!!\n\n Do you want to continue?[y/n]: ");
 					rep=util.getString();
@@ -498,46 +835,56 @@ class setup
 				
 				if(rep.equals("y")||rep.equals("Y"))
 				{
-					f=new File(namelist.getPath()+util.getSeparator()+name+".csv");
-					f.delete();
-					f=new File(timetable.getPath()+util.getSeparator()+name+".csv");
-					f.delete();
-					f=new File(util.getServerData("IP")+"reports");
-					list=f.listFiles();
-					for(int i=0;i<list.length;i++)
-					{
-						f=new File(list[i].getPath()+name+".csv");
-						f.delete();
-					}
+					util.SQLUpdate("DROP DATABASE "+classname);
 					System.out.println("Class successfully deleted");
 				}
 			}
-			System.out.print("Return to main menu?[y/n]: ");
+			System.out.print("Return to the class management menu?[y/n]: ");
 			rep=util.getString();
 		}while(rep.equals("y")||rep.equals("Y"));
 	}	
 	
-	static void firstRun(char a)
+	static void firstRun()
 	{
-		String directory="";
-		File file=new File("delete to reset");
+		String ip="",user="",password="",rep="";
+		boolean login;
+		File file=new File("server.cfg");
 		
-		if(!file.exists()||a=='w')
+		if(!file.exists())
 		{
-			JFileChooser f = new JFileChooser();
+        	do
+        	{
+        		System.out.print("Enter the IP Address of the MySQL Server: ");
+				ip=util.getString();
+				System.out.print("Enter the Username for "+ip+": ");
+				user=util.getString();
+				System.out.print("Enter the Password for "+ip+": ");
+				Console console=System.console();
+				password=new String(console.readPassword());
+				try
+				{
+					login=util.testServerConnection(ip,user,password);
+					if(login)
+						System.out.println("Login attempt to MySQL Server was successful");
+				}catch(SQLException e)
+        		{
+        			System.out.print("Error connecting to the MySQL Server\n\nPossible causes are\n->You have inputted a wrong Username or Password\n->The IP Address of the MySQL server is wrong\n\nIf the IP address and login details were correct, try inputting the IP Address of the server followed by a ':' and then the port number of the MySQL Server(Default port number for MySQL is 3306)\n\n\n Want to try again?[y/n]: ");
+        			rep=util.getString();
+				}
+        	}while(login=false&&(rep.equals("y")||rep.equals("Y")));
         	
-        	System.out.println("Press Enter to select the directory to store database in...");
-			util.getString();
-        	f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY); 
-        	f.showOpenDialog(null);
-			directory=f.getSelectedFile().getPath()+util.getSeparator();
-        	try(FileWriter fw=new FileWriter(file))
+        	if(login)
         	{
-        		fw.write(util.getOS());
-        		fw.write("\n"+directory);
-        	}catch(IOException e)
-        	{
-        		e.printStackTrace();
+        		try(FileWriter fw=new FileWriter(file))
+        		{
+        			fw.write("#You can add your comments to this file by putting a '#' in front of your comment\n#Edit this file to change the configuration settings for the program\n");
+        			fw.write("\nServer IP="+ip);
+        			fw.write("\nUsername="+user);
+        			fw.write("\nPassword="+password);
+        		}catch(IOException e)
+        		{
+        			e.printStackTrace();
+        		}
         	}
         }
 	}
@@ -800,7 +1147,7 @@ class student
 	{
 		this.refresh();
 		student s=this.find(regno);
-		String a=util.getTime(),b;
+		String a=util.sysTime(),b;
 		session p=s.session;
 		File f=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+s.batch+".csv"),f1=new File(util.getServerData("IP")+"reports"+util.getSeparator()+util.getDate()+util.getSeparator()+s.batch+"(1).csv");
 		
