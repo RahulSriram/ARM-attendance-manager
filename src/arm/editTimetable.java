@@ -387,8 +387,8 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
         List<String> sessionname=new ArrayList(Arrays.asList(util.SQLQuery(classname,"SELECT SessionName FROM Timetable")));
         List<String> starttime=new ArrayList(Arrays.asList(util.SQLQuery(classname,"SELECT TimeStart FROM Timetable")));
         List<String> endtime=new ArrayList(Arrays.asList(util.SQLQuery(classname,"SELECT TimeEnd FROM Timetable")));
-        String currentstart=util.SQLQuery(classname,"SELECT TimeStart FROM Timetable WHERE Session="+currentsession)[0];
-        String currentend=util.SQLQuery(classname,"SELECT TimeEnd FROM Timetable WHERE Session="+currentsession)[0];
+        String currentstart=util.SQLQuery(classname,"SELECT TimeStart FROM Timetable WHERE Session="+currentsession+" AND Day='"+dayip+"'")[0];
+        String currentend=util.SQLQuery(classname,"SELECT TimeEnd FROM Timetable WHERE Session="+currentsession+" AND Day='"+dayip+"'")[0];
         boolean dayused=false,timeused=false;
 
         if(sessionname.isEmpty())
@@ -565,6 +565,12 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
                 	temp="0";
                 int session=Integer.parseInt(temp)+1;
                 util.SQLUpdate(classname,"INSERT INTO Timetable VALUES('"+dayip+"','"+session+"','"+startip+"','"+endip+"','"+nameip+"')");
+		if(util.tableExists(classname,util.getDate()) && endip.compareTo(util.sysTime())>0) {
+			String[] namelist=util.SQLQuery(classname,"SELECT IDNo FROM Namelist");
+			for(int i=0;i<namelist.length;i++)
+				util.SQLUpdate(classname,"INSERT INTO "+util.getDate()+" VALUES('"+namelist[i]+"','"+session+"'");
+		}
+
                 notifier.setForeground(new java.awt.Color(0, 0, 255));
                 notifier.setText("Successfully added session '"+nameip+"'");
             }
@@ -592,7 +598,8 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
         String nameip=sessionchooser.getSelectedItem().toString();
 
         util.SQLUpdate(classname,"DELETE FROM Timetable WHERE Day='"+dayip+"' AND Session="+currentsession);
-        sessionchooser.setSelectedIndex(currentsession-2);
+        //*********************************************util.SQLUpdate(classname,"DELETE FROM Percentage WHERE SessionName='"+nameip+"'");
+	sessionchooser.setSelectedIndex(currentsession-2);
         leftdaychooser.setModel(new javax.swing.DefaultComboBoxModel(util.SQLQuery(classname,"SELECT DISTINCT Day FROM Timetable")));
         sessionchooser.setModel(new javax.swing.DefaultComboBoxModel(util.SQLQuery(classname,"SELECT SessionName FROM Timetable WHERE Day='"+leftdaychooser.getSelectedItem().toString()+"'")));
         notifier.setForeground(new java.awt.Color(255, 145, 0));

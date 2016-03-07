@@ -164,7 +164,7 @@ public class editLogin extends javax.swing.JFrame {
 
     private void applybuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_applybuttonActionPerformed
         String user=username.getText();
-        String pass=password.getText();
+        String pass=new String(password.getPassword());
         String cname=classname.getText();
         String category=categorychooser.getSelectedItem().toString();
         String[] list=util.SQLQuery("ARM_config","SELECT IDNo FROM "+category);

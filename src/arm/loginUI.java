@@ -129,7 +129,7 @@ public class loginUI extends javax.swing.JFrame {
     
     private void acceptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_acceptActionPerformed
         String idno=idinput.getText();
-        String password=passwordinput.getText();
+        String password=new String(passwordinput.getPassword());
         String table=new String(choice).toLowerCase();
 		boolean available=false;
         String[] list=util.SQLQuery("ARM_config","SELECT IDNo FROM "+table);

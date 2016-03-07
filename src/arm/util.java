@@ -142,12 +142,14 @@ public class util
 	static void updatePercentage(String classname,String session)
 	{
 		String[] idno=util.SQLQuery(classname,"SELECT IDNo FROM Namelist");
+		String[] classlist=util.listClasses();
 		int temp=Integer.parseInt(util.getServerData("SessionNameSize"));
 		
 		if(session.length()>temp)
 		{
 			temp=session.length();
-			util.SQLUpdate(classname,"ALTER TABLE Percentage MODIFY SessionName varchar("+temp+")");
+			for(int i=1;i<=classlist.length;i++)
+				util.SQLUpdate("Class_"+i,"ALTER TABLE Percentage MODIFY SessionName varchar("+temp+")");
 			util.SQLUpdate("ARM_config","UPDATE stats SET SessionNameSize="+temp);
 		}
 		
@@ -182,6 +184,8 @@ public class util
 		
 		util.SQLUpdate(classname,"ALTER TABLE Namelist MODIFY IDNo varchar("+idsize+")");
 		util.SQLUpdate(classname,"ALTER TABLE Percentage MODIFY IDNo varchar("+idsize+")");
+		if(tableExists(util.getDate()))
+			util.SQLUpdate(classname,"ALTER TABLE "+util.getDate()+" MODIFY IDNo varchar("+idsize+")");
 		util.SQLUpdate("ARM_config","ALTER TABLE students MODIFY IDNo varchar("+idsize+")");
 	}
 	

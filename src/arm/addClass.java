@@ -139,7 +139,7 @@ public class addClass extends javax.swing.JFrame {
     private void applybuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_applybuttonActionPerformed
         classname=classinput.getText();
         username=userinput.getText();
-        password=passwordinput.getText();
+        password=new String(passwordinput.getPassword());
         
         if(util.classExists(classname))
         	notifier.setText("Class already exists");

@@ -190,6 +190,7 @@ public class addNamelist extends javax.swing.JFrame {
 			table.setModel(tablemodel);
        		idinput.setText("");
         	nameinput.setText("");
+		idinput.setForeground(new java.awt.Color(49, 55, 57));
     	}
     	
     	else
