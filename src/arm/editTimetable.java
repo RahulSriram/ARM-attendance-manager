@@ -594,10 +594,16 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
 
     private void deletebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deletebuttonActionPerformed
         int currentsession=sessionchooser.getSelectedIndex()+1;
+	int totalsessions=sessionchooser.getItemCount();
         String dayip=leftdaychooser.getSelectedItem().toString();
         String nameip=sessionchooser.getSelectedItem().toString();
 
         util.SQLUpdate(classname,"DELETE FROM Timetable WHERE Day='"+dayip+"' AND Session="+currentsession);
+	for(int i=currentsession;i<totalsessions;i++) {
+		if(util.tableExists(util.getDate()))
+			util.SQLUpdate(classname,"UPDATE "+util.getDate()+" SET Session="+i+" WHERE Session="+(i+1));
+		util.SQLUpdate(classname,"UPDATE Timetable SET Session="+i+" WHERE Day='"+dayip+"' AND Session="+(i+1));
+	}
         //*********************************************util.SQLUpdate(classname,"DELETE FROM Percentage WHERE SessionName='"+nameip+"'");
 	sessionchooser.setSelectedIndex(currentsession-2);
         leftdaychooser.setModel(new javax.swing.DefaultComboBoxModel(util.SQLQuery(classname,"SELECT DISTINCT Day FROM Timetable")));
