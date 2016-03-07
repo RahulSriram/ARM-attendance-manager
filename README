@@ -1,1 +1,8 @@
-attendance-java
+This is a Java application I wrote to help reduce paperwork in classrooms, which traditionally use a large log book to record all the details of each student, each day
+
+As we know, that approach is very time inefficient, and can be improvised by automating the process
+
+That's where my application tries to help. 
+It does all the heavy lifting work of maintaining the records and performing calculations like attenndance percentage, which is very tedious to do manually, if you have a very large database
+
+I'm always open to look in to any comments and bugs you may have found in my application
