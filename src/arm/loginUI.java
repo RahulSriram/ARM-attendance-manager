@@ -52,7 +52,13 @@ public class loginUI extends javax.swing.JFrame {
         passwordlabel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         passwordlabel.setText("Password:");
 
-        accept.setText("Login");
+	passwordinput.addActionListener(new java.awt.event.ActionListener() {
+	    public void actionPerformed(java.awt.event.ActionEvent evt) {
+		acceptActionPerformed(evt);
+            }
+        });
+
+	accept.setText("Login");
         accept.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 acceptActionPerformed(evt);

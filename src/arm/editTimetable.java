@@ -599,10 +599,12 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
         String nameip=sessionchooser.getSelectedItem().toString();
 
         util.SQLUpdate(classname,"DELETE FROM Timetable WHERE Day='"+dayip+"' AND Session="+currentsession);
-	for(int i=currentsession;i<totalsessions;i++) {
+	if(util.tableExists(classname,util.getDate()))
+		util.SQLUpdate(classname,"DELETE FROM "+util.getDate()+" WHERE Session="+currentsession);
+	for(int i=totalsessions;i>currentsession;i--) {
 		if(util.tableExists(classname,util.getDate()))
-			util.SQLUpdate(classname,"UPDATE "+util.getDate()+" SET Session="+i+" WHERE Session="+(i+1));
-		util.SQLUpdate(classname,"UPDATE Timetable SET Session="+i+" WHERE Day='"+dayip+"' AND Session="+(i+1));
+			util.SQLUpdate(classname,"UPDATE "+util.getDate()+" SET Session="+(i-1)+" WHERE Session="+i);
+		util.SQLUpdate(classname,"UPDATE Timetable SET Session="+(i-1)+" WHERE Day='"+dayip+"' AND Session="+i);
 	}
         //*********************************************util.SQLUpdate(classname,"DELETE FROM Percentage WHERE SessionName='"+nameip+"'");
 	sessionchooser.setSelectedIndex(currentsession-2);
