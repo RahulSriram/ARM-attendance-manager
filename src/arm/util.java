@@ -184,7 +184,7 @@ public class util
 		
 		util.SQLUpdate(classname,"ALTER TABLE Namelist MODIFY IDNo varchar("+idsize+")");
 		util.SQLUpdate(classname,"ALTER TABLE Percentage MODIFY IDNo varchar("+idsize+")");
-		if(tableExists(util.getDate()))
+		if(util.tableExists(classname,util.getDate()))
 			util.SQLUpdate(classname,"ALTER TABLE "+util.getDate()+" MODIFY IDNo varchar("+idsize+")");
 		util.SQLUpdate("ARM_config","ALTER TABLE students MODIFY IDNo varchar("+idsize+")");
 	}

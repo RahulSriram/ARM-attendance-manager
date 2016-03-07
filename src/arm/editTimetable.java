@@ -600,7 +600,7 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
 
         util.SQLUpdate(classname,"DELETE FROM Timetable WHERE Day='"+dayip+"' AND Session="+currentsession);
 	for(int i=currentsession;i<totalsessions;i++) {
-		if(util.tableExists(util.getDate()))
+		if(util.tableExists(classname,util.getDate()))
 			util.SQLUpdate(classname,"UPDATE "+util.getDate()+" SET Session="+i+" WHERE Session="+(i+1));
 		util.SQLUpdate(classname,"UPDATE Timetable SET Session="+i+" WHERE Day='"+dayip+"' AND Session="+(i+1));
 	}
