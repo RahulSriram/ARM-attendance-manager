@@ -568,7 +568,7 @@ private void leftdaychooserActionPerformed(java.awt.event.ActionEvent evt) {//GE
 		if(util.tableExists(classname,util.getDate()) && endip.compareTo(util.sysTime())>0) {
 			String[] namelist=util.SQLQuery(classname,"SELECT IDNo FROM Namelist");
 			for(int i=0;i<namelist.length;i++)
-				util.SQLUpdate(classname,"INSERT INTO "+util.getDate()+" VALUES('"+namelist[i]+"','"+session+"')");
+				util.SQLUpdate(classname,"INSERT INTO "+util.getDate()+"(IDNo,Session) VALUES('"+namelist[i]+"','"+session+"')");
 		}
 
                 notifier.setForeground(new java.awt.Color(0, 0, 255));
