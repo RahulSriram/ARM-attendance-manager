@@ -383,7 +383,7 @@ public class addTimetable extends javax.swing.JFrame {
                  * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
                  */
                 try {
-                        javax.swing.UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+                        util.setLookAndFeel();
                 } catch (ClassNotFoundException ex) {
                         java.util.logging.Logger.getLogger(addTimetable.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
                 } catch (InstantiationException ex) {

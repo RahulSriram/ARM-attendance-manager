@@ -518,4 +518,15 @@ public class util
 		
 		return (hh+":"+mm);
 	}
+
+	static void setLookAndFeel()
+	{
+		String a=System.getProperty("os.name").toLowerCase();
+
+		if(a.startsWith("windows"))
+			javax.swing.UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+
+		else
+			javax.swing.UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+	}
 }
